@@ -1,13 +1,15 @@
 ﻿#coding=UTF-8
 
-
+from editableText import EditableText as edit
 import appModuleHandler
 import displayModel
 import queueHandler
 import textInfos
-import ui
+import threading
 import speech
 import braille
+import ui
+import gui
 import wx
 import config
 import re
@@ -67,18 +69,19 @@ class CharsEx(IAccessible) :
 	
 	
 class CharsExEdit(IAccessible) :
+	nextCh = ''
 	origLevel = None
 	def event_typedCharacter(self,ch) :
-		if(self.checkMissChar()) :
+		if(self.checkMissChar(ch,self.nextCh)) :
 			super(CharsExEdit,self).event_typedCharacter(ch)
-			nextCh = self.parent.parent.getNextChar()
-			speech.speakMessage(u'Errore  Hai scritto '+ch+'   scrivi '+self.appModule.expandAccent(nextCh))
-			braille.handler.message(u'Errore  Hai scritto '+ch+'   scrivi '+ nextCh)
+			self.nextCh = self.parent.parent.getNextChar()
+			speech.speakMessage(u'Errore  Hai scritto '+self.appModule.expandAccent(ch)+'   scrivi '+self.appModule.expandAccent(self.nextCh))
+			braille.handler.message(u'Errore  Hai scritto '+ch+'   scrivi '+ self.nextCh)
 		else :
 			super(CharsExEdit,self).event_typedCharacter(ch)
-			nextCh = self.parent.parent.getNextChar()
-			speech.speakMessage(self.appModule.expandAccent(nextCh))
-			braille.handler.message("prossima lettera "+nextCh)
+			self.nextCh = self.parent.parent.getNextChar()
+			speech.speakMessage(self.appModule.expandAccent(self.nextCh))
+			braille.handler.message("prossima lettera "+self.nextCh)
 	
 	def event_gainFocus(self) :
 		#Incremento al massimo il livello di punteggiatura
@@ -92,8 +95,12 @@ class CharsExEdit(IAccessible) :
 		#Riporto il livello di punteggiatura a quello dell'utente
 		config.conf["speech"]["symbolLevel"] = self.origLevel
 	
-	def checkMissChar(self) :
-		return 'No! Hai scritto:' in self.parent.parent.getTextList()
+	def checkMissChar(self,input, screen) :
+		if screen == "spazio" : screen = ' '
+		if screen == '' : screen = input
+		screen = screen[0]
+		return screen != input
+
 
 #Esercizi con le frasi
 class SentEx(IAccessible) :
@@ -111,7 +118,8 @@ class SentEx(IAccessible) :
 			comlen = 0
 		else :
 			comlen = len(current)
-		if len(self.currentSentence) > comlen :
+
+		if self.currentSentence.startswith(current) :
 			next = self.currentSentence[comlen]
 			if next == ' ' :
 				next = 'spazio'
@@ -127,14 +135,20 @@ class SentEx(IAccessible) :
 		else : #F7
 			self.currentSentence = self.firstChild.next.firstChild.windowText
 
-class SentExEdit(IAccessible) :
+class SentExEdit(edit) :
+	
+	#Prevents speaks mistakes twice
+	def script_caret_backspaceCharacter(self,gesture):
+		gesture.send()
+		
 	origLevel = None
 	def event_typedCharacter(self,ch) :
 		if(ch == ' ') :
 			speech.speakMessage(self.value.split(' ')[-2])
 		else :
 			super(SentExEdit,self).event_typedCharacter(ch)
-		speech.speakMessage(self.parent.parent.getNextChar(self.windowText))
+		msg = self.parent.parent.getNextChar(self.windowText)
+		if len(msg) > 0 : speech.speakMessage(msg)
 	
 	def sayWriteSentence(self) :
 		return "Scrivi la frase " + self.parent.parent.currentSentence
@@ -142,10 +156,11 @@ class SentExEdit(IAccessible) :
 	def showSentenceDialog(self):
 		self.parent.parent.refreshSentences()
 		txt = self.parent.parent.currentSentence
-		wx.MessageBox(txt,"Scrivi la frase")
+		gui.messageBox(txt,"Scrivi la frase").showModal()
 		
 	def displaySentence(self) :
-		wx.FutureCall(100, self.showSentenceDialog)
+		wx.FutureCall(1,self.showSentenceDialog)
+
 	
 	def event_gainFocus(self) :
 		#Incremento al massimo il livello di punteggiatura
@@ -159,7 +174,8 @@ class SentExEdit(IAccessible) :
 			#Ripeto la prossima lettera
 			speech.speakMessage("prossima lettera "+self.parent.parent.getNextChar(self.value))
 			super(SentExEdit,self).event_gainFocus()
-			
+
+
 	def event_loseFocus(self) :
 		#Riporto il livello di punteggiatura
 		config.conf["speech"]["symbolLevel"] = self.origLevel
@@ -282,7 +298,7 @@ class AppModule(appModuleHandler.AppModule):
 		return text
 		
 	def showContextInfoDialog(self):
-		wx.MessageBox(api.getFocusObject().parent.parent.getContextInfo(),"Informazioni")
+		gui.messageBox(api.getFocusObject().parent.parent.getContextInfo(),"Informazioni")
 		
 	def script_contextInfo(self,gesture) :
 		if(isinstance(api.getFocusObject(),CharsExEdit) or isinstance(api.getFocusObject(),SentExEdit)):
