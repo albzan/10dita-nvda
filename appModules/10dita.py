@@ -98,6 +98,10 @@ class CharsExEdit(IAccessible) :
 	def checkMissChar(self,input, screen) :
 		if screen == "spazio" : screen = ' '
 		if screen == '' : screen = input
+		if ord(screen[0]) == 174 : screen = chr(13)
+		
+		
+	
 		screen = screen[0]
 		return screen != input
 
@@ -159,7 +163,7 @@ class SentExEdit(edit) :
 		gui.messageBox(txt,"Scrivi la frase").showModal()
 		
 	def displaySentence(self) :
-		wx.FutureCall(1,self.showSentenceDialog)
+		wx.FutureCall(100,self.showSentenceDialog)
 
 	
 	def event_gainFocus(self) :
