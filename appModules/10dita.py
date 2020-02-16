@@ -1,4 +1,7 @@
 ﻿#coding=UTF-8
+#(c) 2020 Alberto Zanella <lapostadialberto@xxxxxxxxx>
+#All Rights reserved
+#GNU General Public License
 
 from editableText import EditableText as edit
 import appModuleHandler
@@ -124,12 +127,14 @@ class SentEx(IAccessible) :
 			comlen = len(current)
 
 		if self.currentSentence.startswith(current) :
-			next = self.currentSentence[comlen]
-			if next == ' ' :
-				next = 'spazio'
-			elif next.isupper() :
-				next = next + ' maiuscola'
-			return self.appModule.expandAccent(next)
+			try :
+				next = self.currentSentence[comlen]
+				if next == ' ' :
+					next = 'spazio'
+				elif next.isupper() :
+					next = next + ' maiuscola'
+				return self.appModule.expandAccent(next)
+			except : return ''
 		return ''
 	
 	def refreshSentences(self) :
@@ -160,7 +165,9 @@ class SentExEdit(edit) :
 	def showSentenceDialog(self):
 		self.parent.parent.refreshSentences()
 		txt = self.parent.parent.currentSentence
-		gui.messageBox(txt,"Scrivi la frase").showModal()
+		try :
+			gui.messageBox(txt,"Scrivi la frase").showModal()
+		except : pass
 		
 	def displaySentence(self) :
 		wx.FutureCall(100,self.showSentenceDialog)
@@ -292,7 +299,8 @@ class AppModule(appModuleHandler.AppModule):
 	TITLE_CHARORSENT = 'CARATTERI O FRASI?'
 	
 	def expandAccent(self,text) :
-		text = text.encode("utf8").replace("è","e accentata")
+		text = u''+text
+		text = text.replace("è","e accentata")
 		text = text.replace("ò","o accentata")
 		text = text.replace("é","e accentata con shift")
 		text = text.replace("à","a accentata")
