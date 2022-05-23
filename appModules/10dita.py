@@ -139,7 +139,7 @@ class SentEx(IAccessible) :
 	
 	def refreshSentences(self) :
 		deft = self.firstChild.next.next.firstChild
-		if deft.role == controlTypes.ROLE_EDITABLETEXT :
+		if deft.role == controlTypes.Role.EDITABLETEXT :
 			self.currentSentence = deft.windowText
 		else : #F7
 			self.currentSentence = self.firstChild.next.firstChild.windowText
@@ -363,5 +363,5 @@ class AppModule(appModuleHandler.AppModule):
 			#EditBox per esercizi caratteri e parole
 			elif (obj.windowClassName == 'ThunderRT6TextBox') and (isinstance(obj.parent.parent,CharsEx) and obj.parent != obj.parent.parent.firstChild) :
 				clsList.insert(0,CharsExEdit)
-			elif (obj.windowClassName == 'ThunderRT6TextBox') and (isinstance(obj.parent.parent,SentEx)) and controlTypes.STATE_READONLY not in obj.states :
+			elif (obj.windowClassName == 'ThunderRT6TextBox') and (isinstance(obj.parent.parent,SentEx)) and controlTypes.State.READONLY not in obj.states :
 				clsList.insert(0,SentExEdit)
