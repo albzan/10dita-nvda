@@ -1,5 +1,5 @@
 # 10dita Add-On for NVDA
-* [Scarica 10dita v3](https://github.com/albzan/10dita-nvda/releases/download/latest/10dita-setup.exe)
+* [Scarica 10dita v3.1](https://github.com/albzan/10dita-nvda/releases/download/latest/10dita-setup.exe)
 * [Scarica addon per NVDA](https://github.com/albzan/10dita-nvda/releases/download/latest/10dita.nvda-addon)
 
 
